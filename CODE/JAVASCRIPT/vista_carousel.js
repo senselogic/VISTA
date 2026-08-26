@@ -17,7 +17,8 @@ class CAROUSEL
         update_function = null,
         slide_width = 0,
         gap_width = 0,
-        width_unit = ""
+        width_unit = "",
+        reset_slide_function = null
         )
     {
         this.HandleResizeEvent = this.HandleResizeEvent.bind( this );
@@ -40,7 +41,16 @@ class CAROUSEL
         this.MaximumVisibleSlideCount = 0;
         this.PerpetualSlideCount = 0;
         this.ActualSlideCount = 0;
-        this.PauseDuration = pause_duration;
+
+        if ( IsArray( pause_duration ) )
+        {
+            this.PauseDurationArray = pause_duration;
+        }
+        else
+        {
+            this.PauseDurationArray = [ pause_duration ];
+        }
+
         this.TranslationDuration = translation_duration;
         this.TranslationSpeed = 1.0 / translation_duration;
         this.IsPerpetual = carousel_is_perpetual;
@@ -49,6 +59,7 @@ class CAROUSEL
         this.SlideWidth = slide_width;
         this.GapWidth = gap_width;
         this.WidthUnit = width_unit;
+        this.UpdateSlideFunction = reset_slide_function;
         this.IsTranslated = false;
         this.IsAutomatic = false;
 
@@ -405,6 +416,11 @@ class CAROUSEL
             this.FinalSlideRatio = 1.0;
             this.SetSlideIndex();
         }
+
+        if ( this.UpdateSlideFunction !== null )
+        {
+            this.UpdateSlideFunction( this, this.InitialSlideIndex, this.FinalSlideIndex, this.FinalSlideRatio );
+        }
     }
 
     // ~~
@@ -525,6 +541,27 @@ class CAROUSEL
         }
     }
 
+    // ~~ 
+
+    GetPauseDuration(
+        )
+    {
+        var
+            slide_index;
+
+        slide_index = this.FinalSlideIndex;
+
+        if ( slide_index >= 0
+            && slide_index < this.PauseDurationArray.length )
+        {
+            return this.PauseDurationArray[ slide_index ];
+        }
+        else
+        {
+            return this.PauseDurationArray[ 0 ];
+        }
+    }
+
     // ~~
 
     StartAutomaticAnimation(
@@ -532,7 +569,7 @@ class CAROUSEL
     {
         this.StopAutomaticAnimation();
         this.IsAutomatic = true;
-        this.AutomaticAnimationTimeout = setTimeout( this.UpdateAutomaticAnimation, this.PauseDuration * 1000.0 );
+        this.AutomaticAnimationTimeout = setTimeout( this.UpdateAutomaticAnimation, this.GetPauseDuration() * 1000.0 );
     }
 
     // ~~
@@ -544,7 +581,7 @@ class CAROUSEL
              && this.ActualSlideCount > 1 )
         {
             this.ShowNextSlide();
-            this.AutomaticAnimationTimeout = setTimeout( this.UpdateAutomaticAnimation, ( this.TranslationDuration + this.PauseDuration ) * 1000.0 );
+            this.AutomaticAnimationTimeout = setTimeout( this.UpdateAutomaticAnimation, ( this.TranslationDuration + this.GetPauseDuration() ) * 1000.0 );
         }
         else
         {
